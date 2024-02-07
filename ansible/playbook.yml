@@ -1,0 +1,129 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Set timezone to Europe/Moscow
+    community.general.timezone:
+      name: Europe/Moscow
+    notify: restart chronyd
+
+  handlers:
+  - name: restart chronyd
+    systemd:
+      name: chronyd
+      state: restarted
+      enabled: yes
+
+- hosts: web
+  become: true
+  tasks:
+  - name: NGINX | Install EPEL Repo package from standart repo
+    yum:
+      name: epel-release
+      state: present
+    tags:
+      - epel-package
+      - packages
+
+  - name: NGINX | Install NGINX package from EPEL Repo
+    yum:
+      name: nginx
+      state: latest
+    tags:
+      - nginx-package
+      - packages
+
+  - name: AUDISPD-PLUGINS | Install AUDISPD-PLUGINS package
+    yum:
+      name: audispd-plugins
+      state: latest
+    tags:
+      - audispd-plugins-package
+      - packages
+
+  - name: copy nginx.conf
+    copy:
+      src: files/web/nginx.conf
+      dest: /etc/nginx/nginx.conf
+      owner: root
+      group: root
+      mode: 0644
+    notify:
+      - restart nginx
+
+  - name: copy audit.rules
+    copy:
+      src: files/web/audit.rules
+      dest: /etc/audit/rules.d/audit.rules
+      owner: root
+      group: root
+      mode: 0600
+
+  - name: copy auditd.conf
+    copy:
+      src: files/web/auditd.conf
+      dest: /etc/audit/auditd.conf
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: copy au-remote.conf
+    copy:
+      src: files/web/au-remote.conf
+      dest: /etc/audisp/plugins.d/au-remote.conf
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: copy audisp-remote.conf
+    copy:
+      src: files/web/audisp-remote.conf
+      dest: /etc/audisp/audisp-remote.conf
+      owner: root
+      group: root
+      mode: 0640
+    notify:
+      - restart auditd
+
+  handlers:
+  - name: restart nginx
+    systemd:
+      name: nginx
+      state: restarted
+      enabled: yes
+
+  - name: restart auditd
+    command: service auditd restart
+
+- hosts: log
+  become: true
+  tasks:
+  - name: copy rsyslog.conf
+    copy:
+      src: files/log/rsyslog.conf
+      dest: /etc/rsyslog.conf
+      owner: root
+      group: root
+      mode: 0644
+    notify:
+      - restart rsyslog
+    
+  - name: copy auditd.conf
+    copy:
+      src: files/log/auditd.conf
+      dest: /etc/audit/auditd.conf
+      owner: root
+      group: root
+      mode: 0640
+    notify:
+      - restart auditd
+
+  handlers:
+  - name: restart rsyslog
+    systemd:
+      name: rsyslog
+      state: restarted
+      enabled: yes
+
+  - name: restart auditd
+    command: service auditd restart
