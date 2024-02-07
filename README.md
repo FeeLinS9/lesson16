@@ -17,7 +17,7 @@ ____________________
 Ansible playbook запускается при старте Vagrant.\
 Проверить работоспособность можно так:\
 На web сервере удаляем картинку, к которой будет обращаться nginx во время открытия веб-сраницы: `sudo rm /usr/share/nginx/html/img/header-background.png` и меняем атрибуты у файла: `sudo chmod +x /etc/nginx/nginx.conf`\
-В браузере заходим на web сервер http://192.168.56.10\
+В браузере заходим на web сервер http://192.168.56.10 \
 Далее на log сервере смотрим, что логи пишутся:
 ```
 vagrant@log ~]$ sudo cat /var/log/rsyslog/web/nginx_access.log 
